@@ -43,6 +43,18 @@ func main() {
                 "value": ["a", "b", "c"]
             },
             {
+                "key": "NumArray",
+                "value": "[1, 2, 3]"
+            },
+            {
+                "key": "NumArray",
+                "value": [1, "2", 3]
+            },
+            {
+                "key": "NumArray",
+                "value": [1, 2, 3]
+            },
+            {
                 "key": "DontMapMe",
                 "value": "555-555-5555"
             },
@@ -51,6 +63,20 @@ func main() {
                 "value": [
 					{
 						"Timezone": "im a string now, screw you",
+						"identifier": "GeoNSRF"
+					}
+				]	
+            },
+            {
+                "key": "Geo",
+                "value": [
+					{
+						"Timezone": {
+							"TimezoneCode": "P",
+							"TimezoneStdOffset": "-8",
+							"Name": "America/Los_Angeles",
+							"ObservesDLS": "true"
+						},
 						"identifier": "GeoNSRF"
 					}
 				]	
@@ -128,18 +154,15 @@ func main() {
 	// loop over each key:value, validating each one
 	// if key:value is "invalid", remove it
 	newData := make([]approach_3.KeyVal, 0, len(l3.Data))
-	badData := []approach_3.KeyVal{}
 	for _, e := range l3.Data {
-		validatedKeyVal, err := e.Validate(&mapping, approach_3.ReporterFunc(report.StdOutReporter))
-		if err != nil {
-			badData = append(badData, e)
-			continue
+		validatedKeyVal, err := e.Validate(&mapping, approach_3.ReporterFunc(report.StdOutReporter), true)
+		if err == nil {
+            newData = append(newData, validatedKeyVal)
 		}
-		newData = append(newData, validatedKeyVal)
 	}
 
 	// assign validated data
 	l3.Data = newData
 	str, _ = json.MarshalIndent(l3, "", "\t") 
-	fmt.Printf("after clean:\n%s\n", str)
+	fmt.Printf("\nafter clean:\n%s\n", str)
 }

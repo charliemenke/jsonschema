@@ -5,6 +5,10 @@
             "type": "array",
             "items": { "type": "string" }
         },
+        "NumArray": { 
+            "type": "array",
+            "items": { "type": "number" }
+        },
         "Geo": {
             "type": "array",
             "items": {

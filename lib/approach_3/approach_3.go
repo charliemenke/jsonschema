@@ -28,18 +28,18 @@ func (rf ReporterFunc) Report(e report.BadKeyVal) error {
 	return rf(e)
 }
 
-func (kv *KeyVal) Validate(s *schema.Schema, r Reporter) (KeyVal, error) {
+func (kv *KeyVal) Validate(s *schema.Schema, r Reporter, coerce bool) (KeyVal, error) {
 	// check if key is specified in passed schema
 	s, ok := (*s.Properties)[kv.Key]
 	if !ok {
 		// if no schema specified, we accept the key:value as is
-		fmt.Printf("no schema mapping for key <%s>, continuing\n", kv.Key)
+		fmt.Printf("\nno schema mapping for key <%s>, continuing\n", kv.Key)
 		return *kv, nil
 	}
 
 	// if schema does exist for key:value, evaluate the value
 	// recursivly via the passed schema
-	val, err := s.Eval(kv.Value)
+	val, err := s.Eval(kv.Value, coerce)
 	if err != nil {
 		// if schema for property fails to eval, report error to reporter
 		// and return the error
@@ -51,7 +51,8 @@ func (kv *KeyVal) Validate(s *schema.Schema, r Reporter) (KeyVal, error) {
 		return *kv, err
 	}
 
-	// else if key:value is valid, return it
+    // else if key:value is valid, return a new key:value as the Value
+    // member could be coerced
 	return KeyVal{
 		Key:   kv.Key,
 		Value: val,

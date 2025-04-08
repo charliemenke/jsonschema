@@ -11,6 +11,6 @@ type BadKeyVal struct {
 }
 
 func StdOutReporter(e BadKeyVal) error {
-	fmt.Printf("failed to validate key <%s> with value <%v>: %s\n", e.Key, e.Value, e.Error)
+	fmt.Printf("\nfailed to validate key <%s> with value <%v>: %s\n", e.Key, e.Value, e.Error)
 	return nil
 }

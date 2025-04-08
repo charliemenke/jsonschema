@@ -69,14 +69,14 @@ func coerceType(v string, toType Type) (any, error) {
 		case "array":
 			var arr []any
 			arrCoerceError := json.Unmarshal([]byte(v), &arr)
-			if arrCoerceError != nil {
+			if arrCoerceError == nil {
 				return arr, nil
 			}
 			err = errors.Join(errors.New(fmt.Sprintf("failed to parse value <%s> to array: %s", v, arrCoerceError)), err)
 		case "object":
 			var obj map[string]any
 			objCoerceError := json.Unmarshal([]byte(v), &obj)
-			if objCoerceError != nil {
+			if objCoerceError == nil {
 				return obj, nil
 			}
 			err = errors.Join(errors.New(fmt.Sprintf("failed to parse value <%s> to obj: %s", v, objCoerceError)), err)
@@ -115,14 +115,14 @@ func (s *Schema) Eval(v any, coerce bool) (any, error) {
 	}
 	// handle array
 	if s.Items != nil {
-		v, err = evalArray(s, v)
+		v, err = evalArray(s, v, coerce)
 		if err != nil {
 			return nil, err
 		}
 	}
 	// handle properties
 	if s.Properties != nil {
-		v, err = evalObject(s, v)
+		v, err = evalObject(s, v, coerce)
 		if err != nil {
 			return nil, err
 		}
@@ -154,7 +154,7 @@ func evalType(s *Schema, val any) (string, error) {
 	return valType, errors.New(fmt.Sprintf("type mismatch, the value <%v> has the type <%s> which does not match expected type(s) <%v>", val, valType, s.Type))
 }
 
-func evalObject(s *Schema, val any) (any, error) {
+func evalObject(s *Schema, val any, coerce bool) (any, error) {
 	if s == nil {
 		return nil, errors.New("schema is nil, cannot eval object")
 	}
@@ -169,7 +169,7 @@ func evalObject(s *Schema, val any) (any, error) {
 
 	// if properties is specified by schema, evaluate them
 	if s.Properties != nil {
-		val, err = evalProperties(s, valObj)
+		val, err = evalProperties(s, valObj, coerce)
 		if err != nil {
 			// if unable to evaluate all properties, return error
 			return val, errors.Join(fmt.Errorf("failed to validate object: %v", valObj), err)
@@ -181,7 +181,7 @@ func evalObject(s *Schema, val any) (any, error) {
 
 }
 
-func evalProperties(s *Schema, val map[string]any) (any, error) {
+func evalProperties(s *Schema, val map[string]any, coerce bool) (any, error) {
 	if s == nil {
 		return nil, errors.New("\tschema is nil, cannot eval properties")
 	}
@@ -202,7 +202,7 @@ func evalProperties(s *Schema, val map[string]any) (any, error) {
 			continue
 		}
 		// otherwise, attempt to evaluate the key:value as per schema spec
-		v, err := (*s.Properties)[objK].Eval(objV)
+		v, err := (*s.Properties)[objK].Eval(objV, coerce)
 		if err != nil {
 			errs = append(errs, err)
 			continue
@@ -211,12 +211,12 @@ func evalProperties(s *Schema, val map[string]any) (any, error) {
 	}
 
 	if len(errs) > 0 {
-		return nil, errors.New(fmt.Sprintf("\tcould not validate all key:vals in obj: %v", errs))
+		return validKeyVals, errors.New(fmt.Sprintf("\tcould not validate all key:vals in obj: %v", errs))
 	}
 	return validKeyVals, nil
 }
 
-func evalArray(s *Schema, val any) (any, error) {
+func evalArray(s *Schema, val any, coerce bool) (any, error) {
 	if s == nil {
 		return nil, errors.New("schema is nil, cannot eval array")
 	}
@@ -230,7 +230,7 @@ func evalArray(s *Schema, val any) (any, error) {
 
 	// enture items are correct schema if schema specifies one
 	if s.Items != nil {
-		val, err = evalItems(s, valItems)
+		val, err = evalItems(s, valItems, coerce)
 		if err != nil {
 			return val, errors.Join(fmt.Errorf("failed to validate all items in array: %v", valItems), err)
 		}
@@ -239,7 +239,7 @@ func evalArray(s *Schema, val any) (any, error) {
 	return val, nil
 }
 
-func evalItems(s *Schema, valItems []any) ([]any, error) {
+func evalItems(s *Schema, valItems []any, coerce bool) ([]any, error) {
 	if s == nil {
 		return nil, errors.New("\tschema is nil, cannot eval Items")
 	}
@@ -253,12 +253,12 @@ func evalItems(s *Schema, valItems []any) ([]any, error) {
 	errs := []error{}
 
 	for i := range valItems {
-		v, err := s.Items.Eval(valItems[i])
+		v, err := s.Items.Eval(valItems[i], coerce)
 		if err != nil {
 			errs = append(errs, err)
-		} else {
-			validItems = append(validItems, v)
-		}
+            continue
+        }
+        validItems = append(validItems, v)
 	}
 
 	if len(errs) > 0 {
