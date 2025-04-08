@@ -1,0 +1,27 @@
+{
+    "properties": {
+        "ListPrice": { "type": "number" },
+        "Appliances": { 
+            "type": "array",
+            "items": { "type": "string" }
+        },
+        "Geo": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "Timezone": {
+                        "type": "object",
+                        "properties": {
+                            "TimezoneCode": { "type": "string" },
+                            "TimezoneStdOffset": { "type": "string" },
+                            "Name": { "type": "string" },
+                            "ObservesDLS": { "type": "boolean" }
+                        }
+                    },
+                    "identifier": { "type": "string" }
+                }
+            }
+        }
+    }
+}
